@@ -14,15 +14,14 @@ namespace AStarSquares
 
         public IList<NavNodeLink> NavNodeLinks { get; set; } = new List<NavNodeLink>();
 
-        public Vector3Int Anchor => Vector3Int.RoundToInt(transform.TransformPoint(new Vector3(-0.5f, 1, 0.5f)));
-
+        public Vector3 Anchor => transform.TransformPoint(new Vector3(0,1,0));
 
         private ClickTest[] targets;
 
         #if UNITY_EDITOR
         private void OnDrawGizmos() {
             Gizmos.color = Color.blue;
-            Gizmos.DrawSphere(Anchor, 0.1f);
+            Gizmos.DrawSphere(Anchor + Vector3.up * .1f, 0.1f);
         }
         #endif
 

@@ -7,7 +7,7 @@ using System;
 namespace AStarSquares
 {
     public interface INavNode {
-        Vector3Int Anchor { get; }
+        Vector3 Anchor { get; }
         int MovePenalty { get; }
         IList<NavNodeLink> NavNodeLinks { get; set; }
 

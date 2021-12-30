@@ -10,7 +10,7 @@ namespace AStarSquares
         private const int STRAIGHT_COST = 10;
         private const int DIAGONAL_COST = 14;
         
-        public IDictionary<Vector3Int, INavNode> AllNodes { get; private set;} = new Dictionary<Vector3Int, INavNode>();
+        public IDictionary<Vector3, INavNode> AllNodes { get; private set;} = new Dictionary<Vector3, INavNode>();
 
         private void Start() {
             foreach (INavNode node in GetComponentsInChildren<INavNode>())
@@ -21,8 +21,8 @@ namespace AStarSquares
 
         public void NodeAdded(INavNode node) {
             GetNeighborNodes(node).ToList().ForEach( neighborNode => {
-                int distance = GetDistance(node.Anchor, neighborNode.Anchor);
-                int vertical = node.Anchor.y - neighborNode.Anchor.y;
+                float distance = GetDistance(node.Anchor, neighborNode.Anchor);
+                float vertical = node.Anchor.y - neighborNode.Anchor.y;
                 if (!node.NavNodeLinks.Any( node => node.LinkedNavNode == neighborNode)) {
                     node.NavNodeLinks.Add(new NavNodeLink(neighborNode, distance, -vertical));
                 }
@@ -40,7 +40,7 @@ namespace AStarSquares
             AllNodes.Remove(node.Anchor);
         }
 
-        public void NodesRemoved(Vector2Int position) {
+        public void NodesRemoved(Vector2 position) {
             foreach (INavNode node in GetNodes(position))
             {
                 NodeRemoved(node);
@@ -64,13 +64,13 @@ namespace AStarSquares
             return returnNodes;
         }
 
-        public List<INavNode> GetNodesInRadius(Vector3Int position, int radius) {
+        public List<INavNode> GetNodesInRadius(Vector3 position, int radius) {
             List<INavNode> nodes = new List<INavNode>();
 
             for (int y = -radius; y <= radius; y++) {
                 for (int x = -radius; x <= radius; x++) {
                     if ((x * x) + (y * y) <= radius * radius) {
-                        nodes.AddRange(GetNodes(new Vector2Int(x + position.x,y + position.z)));
+                        nodes.AddRange(GetNodes(new Vector2(x + position.x,y + position.z)));
                     }
                 }
             }
@@ -82,27 +82,27 @@ namespace AStarSquares
 
             for (int y = -1; y <= 1; y++) {
                 for (int x = -1; x <= 1; x++) {
-                    nodes.AddRange(GetNodes(new Vector2Int(x + node.Anchor.x,y + node.Anchor.z)));
+                    nodes.AddRange(GetNodes(new Vector2(x + node.Anchor.x,y + node.Anchor.z)));
                 }
             }
             return nodes;
         }
 
 
-        public IEnumerable<INavNode> GetNodes(Vector2Int position) {
+        public IEnumerable<INavNode> GetNodes(Vector2 position) {
             return AllNodes.Where(node => node.Key.x == position.x).Where(node => node.Key.z == position.y).Select(kvp => kvp.Value);
         }
 
-        public IEnumerable<INavNode> GetNodes(Vector3Int position) {
-            return GetNodes(new Vector2Int(position.x, position.z));
+        public IEnumerable<INavNode> GetNodes(Vector3 position) {
+            return GetNodes(new Vector2(position.x, position.z));
         }
 
-        private int GetDistance(Vector3Int from, Vector3Int to)
+        private float GetDistance(Vector3 from, Vector3 to)
         {
-            Vector3Int dist = from - to;
-            int distX = Mathf.Abs(dist.x);
-            int distY = Mathf.Abs(dist.y);
-            int distZ = Mathf.Abs(dist.z);
+            Vector3 dist = from - to;
+            float distX = Mathf.Abs(dist.x);
+            float distY = Mathf.Abs(dist.y);
+            float distZ = Mathf.Abs(dist.z);
             if (distX > distZ)
             {
                 return DIAGONAL_COST * distZ + STRAIGHT_COST * (distX - distZ) + STRAIGHT_COST * distY;

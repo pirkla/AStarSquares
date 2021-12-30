@@ -7,8 +7,8 @@ namespace AStarSquares
 {
     public class PathFinder: IPathFinder
     {
-        private const int STRAIGHT_COST = 10;
-        private const int DIAGONAL_COST = 14;
+        private const float STRAIGHT_COST = 10;
+        private const float DIAGONAL_COST = 14;
 
 
         public NavPath FindPath(INavNode start, INavNode end, IEnumerable<INavNode> allNodes, int maxHorizontal, int maxVertical) {
@@ -31,7 +31,7 @@ namespace AStarSquares
                     if (linkedCostNode == null) continue;
                     if (closedList.Contains(linkedCostNode)) continue;
 
-                    int tentativeGCost = currentCostNode.GCost + navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty;
+                    float tentativeGCost = currentCostNode.GCost + navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty;
                     if (tentativeGCost < linkedCostNode.GCost) {
                         linkedCostNode.FromCostNode = currentCostNode;
                         linkedCostNode.GCost = tentativeGCost;
@@ -59,12 +59,12 @@ namespace AStarSquares
         }
 
 
-        private int GetDistance(Vector3Int from, Vector3Int to)
+        private float GetDistance(Vector3 from, Vector3 to)
         {
-            Vector3Int dist = from - to;
-            int distX = Mathf.Abs(dist.x);
-            int distY = Mathf.Abs(dist.y);
-            int distZ = Mathf.Abs(dist.z);
+            Vector3 dist = from - to;
+            float distX = Mathf.Abs(dist.x);
+            float distY = Mathf.Abs(dist.y);
+            float distZ = Mathf.Abs(dist.z);
             if (distX > distZ)
             {
                 return DIAGONAL_COST * distZ + STRAIGHT_COST * (distX - distZ) + STRAIGHT_COST * distY;
@@ -75,7 +75,7 @@ namespace AStarSquares
 
         private class NavCostNode: IComparable
         {
-            public NavCostNode(int gCost, int hCost, INavNode navNode, NavCostNode fromCostNode) {
+            public NavCostNode(float gCost, float hCost, INavNode navNode, NavCostNode fromCostNode) {
                 GCost = gCost;
                 HCost = hCost;
                 NavNodeLinks = navNode.NavNodeLinks;
@@ -89,9 +89,9 @@ namespace AStarSquares
             public NavCostNode FromCostNode;
             public IEnumerable<NavNodeLink> NavNodeLinks;
             public INavNode NavNode;
-            public int GCost;
-            public int HCost;
-            public int FCost => GCost + HCost;
+            public float GCost;
+            public float HCost;
+            public float FCost => GCost + HCost;
         }
     }
 }
