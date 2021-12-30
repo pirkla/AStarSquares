@@ -14,7 +14,7 @@ namespace AStarSquares
 
         public IList<NavNodeLink> NavNodeLinks { get; set; } = new List<NavNodeLink>();
 
-        public Vector3Int Anchor => Vector3Int.RoundToInt(transform.TransformPoint(new Vector3(-0.5f, 1, 0.5f)));
+        public Vector3Int Anchor => Vector3Int.RoundToInt(transform.TransformPoint(new Vector3(0, 1, 0)));
 
 
         private ClickTest[] targets;
