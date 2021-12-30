@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using System;
 
 namespace AStarSquares
 {
@@ -11,7 +12,7 @@ namespace AStarSquares
 
         public int MovePenalty { get; set; } = 0;
 
-        public IEnumerable<INavNode> LinkedNavNodes { get; } = new List<INavNode>();
+        public IList<NavNodeLink> NavNodeLinks { get; set; } = new List<NavNodeLink>();
 
         public Vector3Int Anchor => Vector3Int.RoundToInt(transform.TransformPoint(new Vector3(-0.5f, 1, 0.5f)));
 
@@ -39,3 +40,5 @@ namespace AStarSquares
         }
     }
 }
+
+

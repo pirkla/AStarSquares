@@ -10,59 +10,52 @@ namespace AStarSquares
         private const int STRAIGHT_COST = 10;
         private const int DIAGONAL_COST = 14;
 
-        public List<Tuple<INavNode, int>> FindPath(INavNode start, INavNode end, IEnumerable<INavNode> allNodes, int maxHorizontal, int maxVertical) {
-            Dictionary<Vector3Int, NavCostNode> allCosts = allNodes.Distinct().ToDictionary( navNode => navNode.Anchor, navNode => new NavCostNode(int.MaxValue, 0, navNode, null));
+
+        public NavPath FindPath(INavNode start, INavNode end, IEnumerable<INavNode> allNodes, int maxHorizontal, int maxVertical) {
+            List<NavCostNode> allCosts = allNodes.Select( navNode => new NavCostNode(int.MaxValue, 0, navNode, null)).ToList();
             List<NavCostNode> openList = new List<NavCostNode> { new NavCostNode(0,GetDistance(start.Anchor, end.Anchor), start, null) };
             List<NavCostNode> closedList = new List<NavCostNode>();
 
             while (openList.Count > 0) {
-                NavCostNode currentNode = openList.Min();
-                if (currentNode.NavNode == end) {
-                    return CalculatePath(currentNode);
+                NavCostNode currentCostNode = openList.Min();
+                if (currentCostNode.NavNode == end) {
+                    return CalculatePath(currentCostNode);
                 }
 
-                openList.Remove(currentNode);
-                closedList.Add(currentNode);
+                openList.Remove(currentCostNode);
+                closedList.Add(currentCostNode);
 
-                foreach (NavCostNode neighborNode in GetNeighbors(currentNode, maxHorizontal, maxVertical, allCosts))
+                foreach (NavNodeLink navNodeLink in currentCostNode.NavNodeLinks)
                 {
-                    if (closedList.Contains(neighborNode)) continue;
+                    NavCostNode linkedCostNode = allCosts.FirstOrDefault( cost => cost.NavNode == navNodeLink.LinkedNavNode);
+                    if (linkedCostNode == null) continue;
+                    if (closedList.Contains(linkedCostNode)) continue;
 
-                    int tentativeGCost = currentNode.GCost + GetDistance(currentNode.NavNode.Anchor, neighborNode.NavNode.Anchor) + neighborNode.NavNode.MovePenalty;
-                    if (tentativeGCost < neighborNode.GCost) {
-                        neighborNode.FromCostNode = currentNode;
-                        neighborNode.GCost = tentativeGCost;
-                        neighborNode.HCost = GetDistance(neighborNode.NavNode.Anchor, end.Anchor);
-                        if (!openList.Contains(neighborNode)) {
-                            openList.Add(neighborNode);
+                    int tentativeGCost = currentCostNode.GCost + navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty;
+                    if (tentativeGCost < linkedCostNode.GCost) {
+                        linkedCostNode.FromCostNode = currentCostNode;
+                        linkedCostNode.GCost = tentativeGCost;
+                        linkedCostNode.HCost = GetDistance(linkedCostNode.NavNode.Anchor, end.Anchor);
+                        if (!openList.Contains(linkedCostNode)) {
+                            openList.Add(linkedCostNode);
                         }
                     }
                 }
             }
-            return null;
+            return new NavPath();
         }
 
-        private List<NavCostNode> GetNeighbors(NavCostNode targetNode, int radius, int maxVert, Dictionary<Vector3Int, NavCostNode> allNodes) {
-            List<NavCostNode> nodes = new List<NavCostNode>();
-            nodes.AddRange(targetNode.LinkedLocs.Where( loc => allNodes.ContainsKey(loc)).Select( loc => allNodes[loc]));
-            for (int z = -radius; z <= radius; z++) {
-                for (int x = -radius; x <= radius; x++) {
-                    nodes.AddRange(GetNodes(new Vector3Int(x + targetNode.NavNode.Anchor.x, targetNode.NavNode.Anchor.y, z + targetNode.NavNode.Anchor.z), allNodes, maxVert));
-                }
-            }
-            return nodes;
-        }
+        private NavPath CalculatePath(NavCostNode endCostNode) {
+            List<NavPath.PathNode> path = new List<NavPath.PathNode>();
 
-        private List<Tuple<INavNode, int>> CalculatePath(NavCostNode endCostNode) {
-            List<Tuple<INavNode, int>> path = new List<Tuple<INavNode, int>>();
-            path.Add(new Tuple<INavNode, int>(endCostNode.NavNode, endCostNode.GCost));
+            path.Add(new NavPath.PathNode(endCostNode.NavNode, endCostNode.GCost));
             NavCostNode currentCostNode = endCostNode;
             while(currentCostNode.FromCostNode != null) {
-                path.Add(new Tuple<INavNode, int>(currentCostNode.FromCostNode.NavNode, currentCostNode.FromCostNode.GCost));
+                path.Add(new NavPath.PathNode(currentCostNode.FromCostNode.NavNode, currentCostNode.FromCostNode.GCost));
                 currentCostNode = currentCostNode.FromCostNode;
             }
             path.Reverse();
-            return path;
+            return new NavPath(path);
         }
 
 
@@ -80,19 +73,12 @@ namespace AStarSquares
             return DIAGONAL_COST * distX + STRAIGHT_COST * (distZ - distX) + STRAIGHT_COST * distY;
         }
 
-        private IEnumerable<NavCostNode> GetNodes(Vector3Int position, Dictionary<Vector3Int,NavCostNode> navCostNodes, int maxVert) {
-            return navCostNodes.Where(node => node.Key.x == position.x)
-                .Where(node => node.Key.z == position.z)
-                .Where(node => Mathf.Abs(node.Key.y - position.y) <= maxVert)
-                .Select(kvp => kvp.Value);
-        }
-
         private class NavCostNode: IComparable
         {
             public NavCostNode(int gCost, int hCost, INavNode navNode, NavCostNode fromCostNode) {
                 GCost = gCost;
                 HCost = hCost;
-                LinkedLocs = navNode.LinkedNavNodes.Select(linkedNode => linkedNode.Anchor);
+                NavNodeLinks = navNode.NavNodeLinks;
                 NavNode = navNode;
                 FromCostNode = fromCostNode;
             }
@@ -101,7 +87,7 @@ namespace AStarSquares
                 return this.FCost.CompareTo(((NavCostNode)other).FCost);
             }
             public NavCostNode FromCostNode;
-            public IEnumerable<Vector3Int> LinkedLocs;
+            public IEnumerable<NavNodeLink> NavNodeLinks;
             public INavNode NavNode;
             public int GCost;
             public int HCost;
