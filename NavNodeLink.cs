@@ -1,6 +1,6 @@
 namespace AStarSquares
 {
-    public struct NavNodeLink {
+    public class NavNodeLink {
         public NavNodeLink(INavNode linkedNavNode, int moveCost, int vertical) {
             LinkedNavNode = linkedNavNode;
             Distance = moveCost;

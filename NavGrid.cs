@@ -65,7 +65,7 @@ namespace AStarSquares
             return returnNodes;
         }
 
-        public List<INavNode> GetNodesInRadius(Vector3Int position, int radius) {
+        private List<INavNode> GetNodesInRadius(Vector3Int position, int radius) {
             List<INavNode> nodes = new List<INavNode>();
 
             for (int y = -radius; y <= radius; y++) {
@@ -78,7 +78,7 @@ namespace AStarSquares
             return nodes;
         }
 
-        public List<INavNode> GetJumpableNodes(Vector3Int position, int radius) {
+        private List<INavNode> GetJumpableNodes(Vector3Int position, int radius) {
             List<INavNode> nodes = new List<INavNode>();
 
             for (int z = -radius; z <= radius; z++) {
@@ -109,7 +109,7 @@ namespace AStarSquares
             return nodes;
         }
 
-        public IEnumerable<INavNode> GetNeighborNodes(INavNode node) {
+        private IEnumerable<INavNode> GetNeighborNodes(INavNode node) {
             List<INavNode> nodes = new List<INavNode>();
 
             for (int y = -1; y <= 1; y++) {
@@ -121,12 +121,8 @@ namespace AStarSquares
         }
 
 
-        public IEnumerable<INavNode> GetNodes(Vector2Int position) {
+        private IEnumerable<INavNode> GetNodes(Vector2Int position) {
             return AllNodes.Where(node => node.Key.x == position.x).Where(node => node.Key.z == position.y).Select(kvp => kvp.Value);
-        }
-
-        public IEnumerable<INavNode> GetNodes(Vector3Int position) {
-            return GetNodes(new Vector2Int(position.x, position.z));
         }
 
         private int GetDistance(Vector3Int from, Vector3Int to)

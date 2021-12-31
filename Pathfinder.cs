@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using System;
 
 namespace AStarSquares
 {
@@ -12,8 +11,8 @@ namespace AStarSquares
 
 
         public NavPath FindPath(INavNode start, INavNode end, IEnumerable<INavNode> allNodes, int maxHorizontal, int maxVertical) {
-            List<NavCostNode> allCosts = allNodes.Select( navNode => new NavCostNode(int.MaxValue, 0, navNode, null)).ToList();
-            List<NavCostNode> openList = new List<NavCostNode> { new NavCostNode(0,GetDistance(start.Anchor, end.Anchor), start, null) };
+            List<NavCostNode> allCosts = allNodes.Select( navNode => new NavCostNode(int.MaxValue, 0, navNode, null, null)).ToList();
+            List<NavCostNode> openList = new List<NavCostNode> { new NavCostNode(0,GetDistance(start.Anchor, end.Anchor), start, null, null) };
             List<NavCostNode> closedList = new List<NavCostNode>();
 
             while (openList.Count > 0) {
@@ -34,6 +33,7 @@ namespace AStarSquares
                     int tentativeGCost = currentCostNode.GCost + navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty;
                     if (tentativeGCost < linkedCostNode.GCost) {
                         linkedCostNode.FromCostNode = currentCostNode;
+                        linkedCostNode.FromLink = navNodeLink;
                         linkedCostNode.GCost = tentativeGCost;
                         linkedCostNode.HCost = GetDistance(linkedCostNode.NavNode.Anchor, end.Anchor);
                         if (!openList.Contains(linkedCostNode)) {
@@ -48,10 +48,10 @@ namespace AStarSquares
         private NavPath CalculatePath(NavCostNode endCostNode) {
             List<NavPath.PathNode> path = new List<NavPath.PathNode>();
 
-            path.Add(new NavPath.PathNode(endCostNode.NavNode, endCostNode.GCost));
+            path.Add(new NavPath.PathNode(endCostNode.FromLink, endCostNode.GCost));
             NavCostNode currentCostNode = endCostNode;
             while(currentCostNode.FromCostNode != null) {
-                path.Add(new NavPath.PathNode(currentCostNode.FromCostNode.NavNode, currentCostNode.FromCostNode.GCost));
+                path.Add(new NavPath.PathNode(currentCostNode.FromLink, currentCostNode.FromCostNode.GCost));
                 currentCostNode = currentCostNode.FromCostNode;
             }
             path.Reverse();
@@ -71,27 +71,6 @@ namespace AStarSquares
             }
 
             return DIAGONAL_COST * distX + STRAIGHT_COST * (distZ - distX) + STRAIGHT_COST * distY;
-        }
-
-        private class NavCostNode: IComparable
-        {
-            public NavCostNode(int gCost, int hCost, INavNode navNode, NavCostNode fromCostNode) {
-                GCost = gCost;
-                HCost = hCost;
-                NavNodeLinks = navNode.NavNodeLinks;
-                NavNode = navNode;
-                FromCostNode = fromCostNode;
-            }
-            public int CompareTo(object other) {
-                if (other == null) return 1;
-                return this.FCost.CompareTo(((NavCostNode)other).FCost);
-            }
-            public NavCostNode FromCostNode;
-            public IEnumerable<NavNodeLink> NavNodeLinks;
-            public INavNode NavNode;
-            public int GCost;
-            public int HCost;
-            public int FCost => GCost + HCost;
         }
     }
 }

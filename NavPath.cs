@@ -13,11 +13,11 @@ namespace AStarSquares
         public IList<PathNode> PathNodes;
 
         public struct PathNode {
-            public PathNode(INavNode navNode, int cost) {
-                NavNode = navNode;
+            public PathNode(NavNodeLink navLink, int cost) {
+                NavLink = navLink;
                 Cost = cost;
             }
-            public INavNode NavNode;
+            public NavNodeLink NavLink;
             public int Cost;
         }
     }
