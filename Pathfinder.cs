@@ -27,7 +27,7 @@ namespace AStarSquares
 
                 foreach (NavNodeLink navNodeLink in currentCostNode.NavNodeLinks)
                 {
-                    NavCostNode linkedCostNode = allCosts.FirstOrDefault( cost => cost.NavNode == navNodeLink.LinkedNavNode);
+                    NavCostNode linkedCostNode = allCosts.FirstOrDefault(cost => cost.NavNode == navNodeLink.LinkedNavNode);
                     if (linkedCostNode == null) continue;
                     if (closedList.Contains(linkedCostNode)) continue;
 

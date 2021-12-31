@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System;
 
 namespace AStarSquares
 {
@@ -77,6 +78,37 @@ namespace AStarSquares
             return nodes;
         }
 
+        public List<INavNode> GetJumpableNodes(Vector3Int position, int radius) {
+            List<INavNode> nodes = new List<INavNode>();
+
+            for (int z = -radius; z <= radius; z++) {
+                for (int x = -radius; x <= radius; x++) {
+                    if ((x * x) + (z * z) <= radius * radius) {
+                        IEnumerable<INavNode> newNodes = GetNodes(new Vector2Int(x + position.x,z + position.z));
+                        newNodes.ToList().ForEach( jumpCheckNode => {
+                            int jumpCheckX = x;
+                            int jumpCheckY = jumpCheckNode.Anchor.y + 1;
+                            int jumpCheckZ = z;
+                            bool foundNode = false;
+                            while ( jumpCheckX > 0 || jumpCheckZ > 0 ) {
+                                jumpCheckX = MoveTowards(jumpCheckX, 0, 1);
+                                jumpCheckY = MoveTowards(jumpCheckY, position.y + 1, 1);
+                                jumpCheckZ = MoveTowards(jumpCheckZ, 0, 1);
+                                Debug.Log(new Vector3Int(jumpCheckX + position.x,jumpCheckY,jumpCheckZ + position.z));
+                                if (AllNodes.ContainsKey(new Vector3Int(jumpCheckX + position.x,jumpCheckY,jumpCheckZ + position.z))) {
+                                    foundNode = true;
+                                }
+                            }
+                            if (!foundNode) {
+                                nodes.Add(jumpCheckNode);
+                            }
+                        });
+                    }
+                }
+            }
+            return nodes;
+        }
+
         public IEnumerable<INavNode> GetNeighborNodes(INavNode node) {
             List<INavNode> nodes = new List<INavNode>();
 
@@ -109,6 +141,13 @@ namespace AStarSquares
             }
 
             return DIAGONAL_COST * distX + STRAIGHT_COST * (distZ - distX) + STRAIGHT_COST * distY;
+        }
+
+        private int MoveTowards(int current, int target, int delta) {
+            if (Math.Abs(target-current) <= delta) {
+                return target;
+            }
+            return (current + Math.Sign(target-current) * delta);
         }
     }
 
