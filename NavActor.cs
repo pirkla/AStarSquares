@@ -9,9 +9,6 @@ namespace AStarSquares
 {
     public class NavActor : MonoBehaviour
     {
-
-
-        [SerializeField, SerializeReference]
         public INavNode CurrentNode;
 
         [SerializeField] private AnimationCurve jumpCurve = new AnimationCurve(new Keyframe(0, 0,0,5), new Keyframe(.5f, 1), new Keyframe(1, 0,-5,0));
@@ -36,8 +33,11 @@ namespace AStarSquares
                 }
                 yield return MoveToPoint(pathNode.NavLink.LinkedNavNode.Anchor + Vector3.up * .4f,1);
                 CurrentNode = pathNode.NavLink.LinkedNavNode;
-                CurrentNode.OccupyingActor = this;
+                Debug.Log(CurrentNode.Anchor);
             }
+            CurrentNode.OccupyingActor = this;
+            Debug.Log("set actor");
+            yield return null;
         }
 
         public IEnumerator MoveToPoint (Vector3 target, float speed){

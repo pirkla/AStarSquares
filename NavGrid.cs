@@ -130,7 +130,7 @@ namespace AStarSquares
             Vector3Int dist = from - to;
             int distX = Mathf.Abs(dist.x);
             int distY = Mathf.Abs(dist.y);
-            int distZ = Mathf.Abs(dist.z);
+            int distZ = Mathf.Abs(dist.z); 
             if (distX > distZ)
             {
                 return DIAGONAL_COST * distZ + STRAIGHT_COST * (distX - distZ) + STRAIGHT_COST * distY;
