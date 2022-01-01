@@ -10,6 +10,9 @@ namespace AStarSquares
         Vector3Int Anchor { get; }
         int MovePenalty { get; }
         IList<NavNodeLink> NavNodeLinks { get; set; }
+        NavActor OccupyingActor { get; set;}
+
+        NavActor PassthroughActor { get; set;}
 
     }
 }

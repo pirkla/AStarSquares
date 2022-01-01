@@ -16,6 +16,9 @@ namespace AStarSquares
 
         public Vector3Int Anchor => Vector3Int.RoundToInt(transform.TransformPoint(new Vector3(0, 1, 0)));
 
+        public NavActor OccupyingActor { get; set; }
+        public NavActor PassthroughActor { get; set; }
+
 
         private ClickTest[] targets;
 
