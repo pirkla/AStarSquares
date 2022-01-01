@@ -48,10 +48,10 @@ namespace AStarSquares
         private NavPath CalculatePath(NavCostNode endCostNode) {
             List<NavPath.PathNode> path = new List<NavPath.PathNode>();
 
-            path.Add(new NavPath.PathNode(endCostNode.FromLink, endCostNode.GCost));
             NavCostNode currentCostNode = endCostNode;
             while(currentCostNode.FromCostNode != null) {
-                path.Add(new NavPath.PathNode(currentCostNode.FromLink, currentCostNode.FromCostNode.GCost));
+                Debug.Log(currentCostNode.GCost);
+                path.Add(new NavPath.PathNode(currentCostNode.FromLink, currentCostNode.GCost));
                 currentCostNode = currentCostNode.FromCostNode;
             }
             path.Reverse();
