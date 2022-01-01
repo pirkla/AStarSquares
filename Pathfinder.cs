@@ -50,7 +50,6 @@ namespace AStarSquares
 
             NavCostNode currentCostNode = endCostNode;
             while(currentCostNode.FromCostNode != null) {
-                Debug.Log(currentCostNode.GCost);
                 path.Add(new NavPath.PathNode(currentCostNode.FromLink, currentCostNode.GCost));
                 currentCostNode = currentCostNode.FromCostNode;
             }

@@ -11,7 +11,7 @@ namespace AStarSquares
         private const int STRAIGHT_COST = 10;
         private const int DIAGONAL_COST = 14;
         
-        public IDictionary<Vector3Int, INavNode> AllNodes { get; private set;} = new Dictionary<Vector3Int, INavNode>();
+        List<INavNode> AllNodes { get; set; } = new List<INavNode>();
 
         private void Start() {
             foreach (INavNode node in GetComponentsInChildren<INavNode>())
@@ -31,14 +31,14 @@ namespace AStarSquares
                     neighborNode.NavNodeLinks.Add(new NavNodeLink(node, distance, vertical));
                 }
             });
-            AllNodes.Add(node.Anchor, node);
+            AllNodes.Add(node);
         }
 
         public void NodeRemoved(INavNode node) {
             node.NavNodeLinks.ToList().ForEach( otherLink => {
                 otherLink.LinkedNavNode.NavNodeLinks.ToList().RemoveAll( link => link.LinkedNavNode.Equals(node));
             });
-            AllNodes.Remove(node.Anchor);
+            AllNodes.Remove(node);
         }
 
         public void NodesRemoved(Vector2Int position) {
@@ -95,7 +95,7 @@ namespace AStarSquares
                                 jumpCheckY = MoveTowards(jumpCheckY, position.y + 1, 1);
                                 jumpCheckZ = MoveTowards(jumpCheckZ, 0, 1);
                                 Debug.Log(new Vector3Int(jumpCheckX + position.x,jumpCheckY,jumpCheckZ + position.z));
-                                if (AllNodes.ContainsKey(new Vector3Int(jumpCheckX + position.x,jumpCheckY,jumpCheckZ + position.z))) {
+                                if (AllNodes.Any( node => node.Anchor == new Vector3Int(jumpCheckX + position.x,jumpCheckY,jumpCheckZ + position.z))) {
                                     foundNode = true;
                                 }
                             }
@@ -109,7 +109,7 @@ namespace AStarSquares
             return nodes;
         }
 
-        private IEnumerable<INavNode> GetNeighborNodes(INavNode node) {
+        public IEnumerable<INavNode> GetNeighborNodes(INavNode node) {
             List<INavNode> nodes = new List<INavNode>();
 
             for (int y = -1; y <= 1; y++) {
@@ -122,7 +122,7 @@ namespace AStarSquares
 
 
         private IEnumerable<INavNode> GetNodes(Vector2Int position) {
-            return AllNodes.Where(node => node.Key.x == position.x).Where(node => node.Key.z == position.y).Select(kvp => kvp.Value);
+            return AllNodes.Where(node => node.Anchor.x == position.x).Where(node => node.Anchor.z == position.y);
         }
 
         private int GetDistance(Vector3Int from, Vector3Int to)
