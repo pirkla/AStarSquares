@@ -29,9 +29,9 @@ namespace AStarSquares
             foreach (PathNode pathNode in path.PathNodes)
             {
                 if (pathNode.Distance > 14) {
-                    yield return JumpToPoint(pathNode.LinkedLocation.asVector3() + Vector3.up * .4f, 1,1);
+                    yield return JumpToPoint(pathNode.Location.asVector3() + Vector3.up * .4f, 1,1);
                 }
-                yield return MoveToPoint(pathNode.LinkedLocation.asVector3() + Vector3.up * .4f,1);
+                yield return MoveToPoint(pathNode.Location.asVector3() + Vector3.up * .4f,1);
                 // CurrentNode = pathNode.NavLink.LinkedNavNode;
             }
             // CurrentNode.OccupyingActor = this;

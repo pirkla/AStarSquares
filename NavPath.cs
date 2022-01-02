@@ -9,7 +9,7 @@ namespace AStarSquares
         public PathNode[] PathNodes;
     }
     public struct PathNode {
-            public int3 LinkedLocation;
+            public int3 Location;
             public int Distance;
             public int Cost;
         }

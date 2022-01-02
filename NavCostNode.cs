@@ -8,13 +8,14 @@ namespace AStarSquares {
     public struct NavCostNode
     {
         public int3 FromIndex;
+        public bool Linked;
         public int Distance;
         public int GCost;
         public int HCost;
-        public int FCost;
+        public int FCost => GCost + HCost;
         public int3 Index;
 
-        public NavCostNodeLink[] CostNodeLinks;
+        // public NavCostNodeLink[] CostNodeLinks;
     }
 
     public struct NavCostNodeLink {

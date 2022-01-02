@@ -14,19 +14,23 @@ namespace AStarSquares
 
 
         public NavPath FindPath(int3 start, int3 end, IEnumerable<INavNode> allNodes, int maxHorizontal, int maxVertical) {
+            NativeMultiHashMap<int3, NavCostNodeLink> allLinks = new NativeMultiHashMap<int3, NavCostNodeLink>(allNodes.Count(), Allocator.Temp);
             NativeHashMap<int3, NavCostNode> allCosts = new NativeHashMap<int3, NavCostNode>(allNodes.Count(), Allocator.Temp);
             foreach (INavNode node in allNodes)
             {
+                foreach (NavNodeLink link in node.NavNodeLinks)
+                {
+                    allLinks.Add(node.Anchor.asInt3(), new NavCostNodeLink(){
+                        Distance = link.Distance,
+                        LinkedIndex = link.LinkedNavNode.Anchor.asInt3()
+                    });
+                }
+
+                
                 allCosts.TryAdd(node.Anchor.asInt3(), new NavCostNode(){
                     GCost = int.MaxValue,
-                    Index = new int3(node.Anchor.x, node.Anchor.y, node.Anchor.z),
-                    CostNodeLinks = node.NavNodeLinks.Select( nodeLink => new NavCostNodeLink() {
-                        Distance = nodeLink.Distance,
-                        LinkedIndex = nodeLink.LinkedNavNode.Anchor.asInt3()
-                    }).ToArray()
-                    // CostNodeLinks = node.NavNodeLinks.Select( node => new NavCostNodeLink(){
-                    //     node.LinkedNavNode.Anchor.ToArray()
-                    // }))
+                    Index = node.Anchor.asInt3(),
+                    Linked = false
                 });
             }
 
@@ -37,6 +41,7 @@ namespace AStarSquares
             NavCostNode startNode = allCosts[start];
             startNode.GCost = 0;
             startNode.HCost = GetDistance(start, end);
+            allCosts[start] = startNode;
             openList.Add(start);
 
 
@@ -56,7 +61,7 @@ namespace AStarSquares
 
                 closedList.Add(currentCostNode.Index);
 
-                foreach (NavCostNodeLink navNodeLink in currentCostNode.CostNodeLinks)
+                foreach (NavCostNodeLink navNodeLink in allLinks.GetValuesForKey(currentCostNode.Index))
                 {
                     if (!allCosts.TryGetValue(navNodeLink.LinkedIndex, out NavCostNode linkedCostNode)) continue;
                     if (closedList.Contains(linkedCostNode.Index)) continue;
@@ -65,11 +70,13 @@ namespace AStarSquares
                     int tentativeGCost = currentCostNode.GCost + navNodeLink.Distance;
                     if (tentativeGCost < linkedCostNode.GCost) {
                         linkedCostNode.FromIndex = currentCostNode.Index;
+                        linkedCostNode.Linked = true;
                         linkedCostNode.GCost = tentativeGCost;
                         linkedCostNode.HCost = GetDistance(linkedCostNode.Index, end);
                         linkedCostNode.Distance = navNodeLink.Distance;
                         if(!openList.Contains(linkedCostNode.Index)) {
                             openList.Add(linkedCostNode.Index);
+                            allCosts[linkedCostNode.Index] = linkedCostNode;
                         }
                     }
                 }
@@ -77,33 +84,31 @@ namespace AStarSquares
             openList.Dispose();
             closedList.Dispose();
             allCosts.Dispose();
+            allLinks.Dispose();
 
             return new NavPath();
         }
 
         private NavCostNode lowestFCostNode(NativeList<int3> openList, NativeHashMap<int3, NavCostNode> allCostNodes) {
-            NavCostNode lowestFCostNode = new NavCostNode(){ 
-                HCost = int.MaxValue,
-                GCost = int.MaxValue
-            };
-            openList.ToList().ForEach( index => {
-                if (allCostNodes[index].FCost < lowestFCostNode.FCost) {
-                    lowestFCostNode = allCostNodes[index];
+            NavCostNode lowestFCostNode = allCostNodes[openList[0]];
+            foreach (int3 nodeIndex in openList)
+            {
+                if (allCostNodes[nodeIndex].FCost < lowestFCostNode.FCost) {
+                    lowestFCostNode = allCostNodes[nodeIndex];
                 }
-            });
+            }
             return lowestFCostNode;
         }
         private NavPath CalculatePath(NavCostNode endCostNode, NativeHashMap<int3, NavCostNode> allCostNodes) {
             List<PathNode> path = new List<PathNode>();
-
             NavCostNode currentCostNode = endCostNode;
-            while(!currentCostNode.FromIndex.Equals(new int3(0,0,0))) {    
+            while(currentCostNode.Linked) {    
                 path.Add(new PathNode() {
-                    LinkedLocation = (int3)currentCostNode.FromIndex,
+                    Location = currentCostNode.Index,
                     Cost = currentCostNode.GCost,
                     Distance = currentCostNode.Distance
                 });
-                currentCostNode = allCostNodes[(int3)currentCostNode.FromIndex];
+                currentCostNode = allCostNodes[currentCostNode.FromIndex];
             }
             path.Reverse();
             return new NavPath(){
