@@ -23,9 +23,9 @@ namespace AStarSquares
         public  NativeHashMap<int3, NavCostNode> allCosts;
         public NativeList<PathNode> ResultPath;
         public void Execute() {
-            ResultPath = FindPath(Start, End, allLinks, allCosts);
+            FindPath(Start, End, allLinks, allCosts);
         }
-        public NativeList<PathNode> FindPath(int3 start, int3 end, NativeMultiHashMap<int3, NavCostNodeLink> allLinks, NativeHashMap<int3, NavCostNode> allCosts) {
+        public void FindPath(int3 start, int3 end, NativeMultiHashMap<int3, NavCostNodeLink> allLinks, NativeHashMap<int3, NavCostNode> allCosts) {
             // NativeMultiHashMap<int3, NavCostNodeLink> allLinks = new NativeMultiHashMap<int3, NavCostNodeLink>(allNodes.Count(), Allocator.Temp);
             // NativeHashMap<int3, NavCostNode> allCosts = new NativeHashMap<int3, NavCostNode>(allNodes.Count(), Allocator.Temp);
             // foreach (INavNode node in allNodes)
@@ -59,7 +59,10 @@ namespace AStarSquares
             while (openList.Length > 0) {
                 NavCostNode currentCostNode =  lowestFCostNode(openList, allCosts);
                 if (currentCostNode.Index.Equals(end)) {
-                    return CalculatePath(currentCostNode, allCosts);
+                    SetPath(currentCostNode, allCosts);
+                    openList.Dispose();
+                    closedList.Dispose();
+                    return;
                 }
 
                 for (int i = 0; i < openList.Length; i++)
@@ -94,10 +97,6 @@ namespace AStarSquares
             }
             openList.Dispose();
             closedList.Dispose();
-            allCosts.Dispose();
-            allLinks.Dispose();
-
-            return new NativeList<PathNode>();
         }
 
         private NavCostNode lowestFCostNode(NativeList<int3> openList, NativeHashMap<int3, NavCostNode> allCostNodes) {
@@ -110,19 +109,17 @@ namespace AStarSquares
             }
             return lowestFCostNode;
         }
-        private NativeList<PathNode> CalculatePath(NavCostNode endCostNode, NativeHashMap<int3, NavCostNode> allCostNodes) {
-            NativeList<PathNode> path = new NativeList<PathNode>(allCostNodes.Count(), Allocator.Temp);
+        private void SetPath(NavCostNode endCostNode, NativeHashMap<int3, NavCostNode> allCostNodes) {
             NavCostNode currentCostNode = endCostNode;
             while(currentCostNode.Linked) {    
-                path.Add(new PathNode() {
+                ResultPath.Add(new PathNode() {
                     Location = currentCostNode.Index,
                     Cost = currentCostNode.GCost,
                     Distance = currentCostNode.Distance
                 });
                 currentCostNode = allCostNodes[currentCostNode.FromIndex];
             }
-            path.Reverse();
-            return path;
+            ResultPath.Reverse();
         }
 
 

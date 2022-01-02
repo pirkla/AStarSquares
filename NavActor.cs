@@ -27,7 +27,7 @@ namespace AStarSquares
             
         }
 
-        public IEnumerator TravelPath(NativeList<PathNode> path) {
+        public IEnumerator TravelPath(IList<PathNode> path) {
             foreach (PathNode pathNode in path)
             {
                 if (pathNode.Distance > 14) {
@@ -37,7 +37,6 @@ namespace AStarSquares
                 // CurrentNode = pathNode.NavLink.LinkedNavNode;
             }
             // CurrentNode.OccupyingActor = this;
-            path.Dispose();
             yield return null;
         }
 
