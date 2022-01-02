@@ -9,5 +9,7 @@ namespace AStarSquares
         public int Vertical;
         public INavNode LinkedNavNode;
         public int Distance;
+
+        public bool IsJump => Distance > 14;
     }    
 }

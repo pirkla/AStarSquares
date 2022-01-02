@@ -30,7 +30,7 @@ namespace AStarSquares
                     if (linkedCostNode == null) continue;
                     if (closedList.Contains(linkedCostNode)) continue;
 
-                    int tentativeGCost = currentCostNode.GCost + navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty;
+                    int tentativeGCost = currentCostNode.GCost + navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty + (navNodeLink.IsJump ? 1:0);
                     if (tentativeGCost < linkedCostNode.GCost) {
                         linkedCostNode.FromCostNode = currentCostNode;
                         linkedCostNode.FromLink = navNodeLink;

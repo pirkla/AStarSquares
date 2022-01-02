@@ -10,7 +10,9 @@ namespace AStarSquares
     {
         public bool IsWalkable = true;
 
-        public int MovePenalty { get; set; } = 0;
+        public int MovePenalty => movePenalty;
+        [SerializeField]
+        private int movePenalty = 0;
 
         public IList<NavNodeLink> NavNodeLinks { get; set; } = new List<NavNodeLink>();
 

@@ -21,7 +21,7 @@ namespace AStarSquares
         }
 
         public void NodeAdded(INavNode node) {
-            GetNeighborNodes(node).ToList().ForEach( neighborNode => {
+            GetJumpableNodes(node.Anchor, 2).ToList().ForEach( neighborNode => {
                 int distance = GetDistance(node.Anchor, neighborNode.Anchor);
                 int vertical = node.Anchor.y - neighborNode.Anchor.y;
                 if (!node.NavNodeLinks.Any( node => node.LinkedNavNode == neighborNode)) {
