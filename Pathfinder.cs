@@ -14,74 +14,67 @@ namespace AStarSquares
 
 
         public NavPath FindPath(INavNode start, INavNode end, IEnumerable<INavNode> allNodes, int maxHorizontal, int maxVertical) {
-            NativeHashMap<Vector3Int, NavCostNode> allCosts = new NativeHashMap<Vector3Int, NavCostNode>();
-            allNodes.ToList().ForEach( node => {
-                allCosts.Add(node.Anchor, new NavCostNode(){
+            NativeHashMap<Vector3Int, NavCostNode> allCosts = new NativeHashMap<Vector3Int, NavCostNode>(allNodes.Count(), Allocator.Temp);
+            foreach (INavNode node in allNodes)
+            {
+                allCosts.TryAdd(node.Anchor, new NavCostNode(){
                     GCost = int.MaxValue,
                     NavNode = node,
+                    Index = node.Anchor
                 });
-            });
-            NativeList<Vector3Int> openList = new NativeList<Vector3Int>();
+            }
+
+            NativeList<Vector3Int> openList = new NativeList<Vector3Int>(Allocator.Temp);
+            NativeList<Vector3> closedList = new NativeList<Vector3>(Allocator.Temp);
+
+
             NavCostNode startNode = allCosts[start.Anchor];
             startNode.GCost = 0;
             startNode.HCost = GetDistance(start.Anchor, end.Anchor);
             openList.Add(start.Anchor);
-            //  allNodes.Select( navNode => new NavCostNode() {
-            //     GCost = int.MaxValue,
-            //     NavNode = navNode,
-            //     Index = navNode.Anchor
-            // }).ToList();
 
 
-            // NavCostNode startNode = allCosts.Find( navCostNode => navCostNode.NavNode == start);
-            // startNode.GCost = 0;
-            // startNode.HCost = GetDistance(start.Anchor, end.Anchor);
-            // openList.Add(startNode.Index);
-            
-            //  {
-            //     new NavCostNode() {
-            //         Position = new int3(start.Anchor.x, start.Anchor.y, start.Anchor.z),
-            //         GCost = 0,
-            //         HCost = GetDistance(start.Anchor, end.Anchor),
-            //         NavNode = start
-            //     }
-            // };
-
-            // List<NavCostNode> allCosts = allNodes.Select( navNode => new NavCostNode(int.MaxValue, 0, navNode, null, null)).ToList();
-            // List<NavCostNode> openList = new List<NavCostNode> { new NavCostNode(0,GetDistance(start.Anchor, end.Anchor), start, null, null) };
-            NativeList<Vector3> closedList = new NativeList<Vector3>();
-
-            while (openList.Count() > 0) {
+            while (openList.Length > 0) {
                 NavCostNode currentCostNode =  lowestFCostNode(openList, allCosts);
                 if (currentCostNode.NavNode == end) {
                     return CalculatePath(currentCostNode, allCosts);
                 }
 
-                openList.Remove(currentCostNode);
-                closedList.Add(currentCostNode);
+                for (int i = 0; i < openList.Length; i++)
+                {
+                    if (openList[i] == currentCostNode.Index) {
+                        openList.RemoveAtSwapBack(i);
+                        break;
+                    }
+                }
+
+                closedList.Add(currentCostNode.Index);
 
                 foreach (NavNodeLink navNodeLink in currentCostNode.NavNode.NavNodeLinks)
                 {
                     Debug.Log("checking links");
-                    NavCostNode linkedCostNode = allCosts.FirstOrDefault(cost => cost.NavNode == navNodeLink.LinkedNavNode);
-                    if (linkedCostNode.Equals(default(NavCostNode))) continue;
-                    if (closedList.Any(costNode => costNode.NavNode == linkedCostNode.NavNode)) continue;
+                    if (!allCosts.TryGetValue(navNodeLink.LinkedNavNode.Anchor, out NavCostNode linkedCostNode)) continue;
+                    if (closedList.Contains(linkedCostNode.Index)) continue;
 
                     Debug.Log("checking links 2");
 
                     int tentativeGCost = currentCostNode.GCost + navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty;
                     if (tentativeGCost < linkedCostNode.GCost) {
                         Debug.Log("checking links 3");
-                        linkedCostNode.FromNavNode = currentCostNode.NavNode;
+                        linkedCostNode.FromIndex = currentCostNode.Index;
                         linkedCostNode.FromLink = navNodeLink;
                         linkedCostNode.GCost = tentativeGCost;
                         linkedCostNode.HCost = GetDistance(linkedCostNode.NavNode.Anchor, end.Anchor);
-                        if (!openList.Any(costNode => costNode.NavNode == linkedCostNode.NavNode)) {
-                            openList.Add(linkedCostNode);
+                        if(!openList.Contains(linkedCostNode.Index)) {
+                            openList.Add(linkedCostNode.Index);
                         }
                     }
                 }
             }
+            openList.Dispose();
+            closedList.Dispose();
+            allCosts.Dispose();
+
             return new NavPath();
         }
 
@@ -97,13 +90,13 @@ namespace AStarSquares
             });
             return lowestFCostNode;
         }
-        private NavPath CalculatePath(NavCostNode endCostNode, IEnumerable<NavCostNode> allCostNodes) {
+        private NavPath CalculatePath(NavCostNode endCostNode, NativeHashMap<Vector3Int, NavCostNode> allCostNodes) {
             List<NavPath.PathNode> path = new List<NavPath.PathNode>();
 
             NavCostNode currentCostNode = endCostNode;
-            while(currentCostNode.FromNavNode != null) {    
+            while(currentCostNode.FromIndex != null) {    
                 path.Add(new NavPath.PathNode(currentCostNode.FromLink, currentCostNode.GCost));
-                currentCostNode = allCostNodes.ToList().Find(navCostNode => navCostNode.NavNode == currentCostNode.FromNavNode);
+                currentCostNode = allCostNodes[(Vector3Int)currentCostNode.FromIndex];
             }
             Debug.Log("count" + path.Count);
             path.Reverse();
