@@ -26,17 +26,15 @@ namespace AStarSquares
         }
 
         public IEnumerator TravelPath(NavPath path) {
-            foreach (NavPath.PathNode pathNode in path.PathNodes)
+            foreach (PathNode pathNode in path.PathNodes)
             {
-                if (pathNode.NavLink.Distance > 14) {
-                    yield return JumpToPoint(pathNode.NavLink.LinkedNavNode.Anchor + Vector3.up * .4f, 1,1);
+                if (pathNode.Distance > 14) {
+                    yield return JumpToPoint(pathNode.LinkedLocation.asVector3() + Vector3.up * .4f, 1,1);
                 }
-                yield return MoveToPoint(pathNode.NavLink.LinkedNavNode.Anchor + Vector3.up * .4f,1);
-                CurrentNode = pathNode.NavLink.LinkedNavNode;
-                Debug.Log(CurrentNode.Anchor);
+                yield return MoveToPoint(pathNode.LinkedLocation.asVector3() + Vector3.up * .4f,1);
+                // CurrentNode = pathNode.NavLink.LinkedNavNode;
             }
-            CurrentNode.OccupyingActor = this;
-            Debug.Log("set actor");
+            // CurrentNode.OccupyingActor = this;
             yield return null;
         }
 
