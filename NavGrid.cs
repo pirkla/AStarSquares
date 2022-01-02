@@ -48,6 +48,29 @@ namespace AStarSquares
             }
         }
 
+
+
+        // public void AsLinkList() {
+        //     NativeMultiHashMap<int3, NavCostNodeLink> allLinks = new NativeMultiHashMap<int3, NavCostNodeLink>(allNodes.Count(), Allocator.Temp);
+        //     NativeHashMap<int3, NavCostNode> allCosts = new NativeHashMap<int3, NavCostNode>(allNodes.Count(), Allocator.Temp);
+        //     foreach (INavNode node in allNodes)
+        //     {
+        //         foreach (NavNodeLink link in node.NavNodeLinks)
+        //         {
+        //             allLinks.Add(node.Anchor.asInt3(), new NavCostNodeLink(){
+        //                 Distance = link.Distance,
+        //                 LinkedIndex = link.LinkedNavNode.Anchor.asInt3()
+        //             });
+        //         }
+
+        //         allCosts.TryAdd(node.Anchor.asInt3(), new NavCostNode(){
+        //             GCost = int.MaxValue,
+        //             Index = node.Anchor.asInt3(),
+        //             Linked = false
+        //         });
+        //     }
+        // }
+
         public IList<INavNode> GetLinkedNodes(INavNode targetNode, int iterations) {
             List<INavNode> returnNodes = new List<INavNode>();
             IList<NavNodeLink> currentLinks = targetNode.NavNodeLinks;

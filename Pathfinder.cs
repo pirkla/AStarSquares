@@ -3,36 +3,47 @@ using System.Linq;
 using Unity.Mathematics;
 using Unity.Collections;
 using UnityEngine;
+using Unity.Entities;
+using Unity.Jobs;
 
 
 namespace AStarSquares
 {
-    public class PathFinder: IPathFinder
-    {
+    // public class PathFinder
+    // {
+
+
+    public struct FindPathJob: IJob {
         private const int STRAIGHT_COST = 10;
         private const int DIAGONAL_COST = 14;
 
+        public int3 Start;
+        public int3 End;
+        public NativeMultiHashMap<int3, NavCostNodeLink> allLinks;
+        public  NativeHashMap<int3, NavCostNode> allCosts;
+        public NativeList<PathNode> ResultPath;
+        public void Execute() {
+            ResultPath = FindPath(Start, End, allLinks, allCosts);
+        }
+        public NativeList<PathNode> FindPath(int3 start, int3 end, NativeMultiHashMap<int3, NavCostNodeLink> allLinks, NativeHashMap<int3, NavCostNode> allCosts) {
+            // NativeMultiHashMap<int3, NavCostNodeLink> allLinks = new NativeMultiHashMap<int3, NavCostNodeLink>(allNodes.Count(), Allocator.Temp);
+            // NativeHashMap<int3, NavCostNode> allCosts = new NativeHashMap<int3, NavCostNode>(allNodes.Count(), Allocator.Temp);
+            // foreach (INavNode node in allNodes)
+            // {
+            //     foreach (NavNodeLink link in node.NavNodeLinks)
+            //     {
+            //         allLinks.Add(node.Anchor.asInt3(), new NavCostNodeLink(){
+            //             Distance = link.Distance,
+            //             LinkedIndex = link.LinkedNavNode.Anchor.asInt3()
+            //         });
+            //     }
 
-        public NavPath FindPath(int3 start, int3 end, IEnumerable<INavNode> allNodes, int maxHorizontal, int maxVertical) {
-            NativeMultiHashMap<int3, NavCostNodeLink> allLinks = new NativeMultiHashMap<int3, NavCostNodeLink>(allNodes.Count(), Allocator.Temp);
-            NativeHashMap<int3, NavCostNode> allCosts = new NativeHashMap<int3, NavCostNode>(allNodes.Count(), Allocator.Temp);
-            foreach (INavNode node in allNodes)
-            {
-                foreach (NavNodeLink link in node.NavNodeLinks)
-                {
-                    allLinks.Add(node.Anchor.asInt3(), new NavCostNodeLink(){
-                        Distance = link.Distance,
-                        LinkedIndex = link.LinkedNavNode.Anchor.asInt3()
-                    });
-                }
-
-                
-                allCosts.TryAdd(node.Anchor.asInt3(), new NavCostNode(){
-                    GCost = int.MaxValue,
-                    Index = node.Anchor.asInt3(),
-                    Linked = false
-                });
-            }
+            //     allCosts.TryAdd(node.Anchor.asInt3(), new NavCostNode(){
+            //         GCost = int.MaxValue,
+            //         Index = node.Anchor.asInt3(),
+            //         Linked = false
+            //     });
+            // }
 
             NativeList<int3> openList = new NativeList<int3>(Allocator.Temp);
             NativeList<int3> closedList = new NativeList<int3>(Allocator.Temp);
@@ -86,7 +97,7 @@ namespace AStarSquares
             allCosts.Dispose();
             allLinks.Dispose();
 
-            return new NavPath();
+            return new NativeList<PathNode>();
         }
 
         private NavCostNode lowestFCostNode(NativeList<int3> openList, NativeHashMap<int3, NavCostNode> allCostNodes) {
@@ -99,8 +110,8 @@ namespace AStarSquares
             }
             return lowestFCostNode;
         }
-        private NavPath CalculatePath(NavCostNode endCostNode, NativeHashMap<int3, NavCostNode> allCostNodes) {
-            List<PathNode> path = new List<PathNode>();
+        private NativeList<PathNode> CalculatePath(NavCostNode endCostNode, NativeHashMap<int3, NavCostNode> allCostNodes) {
+            NativeList<PathNode> path = new NativeList<PathNode>(allCostNodes.Count(), Allocator.Temp);
             NavCostNode currentCostNode = endCostNode;
             while(currentCostNode.Linked) {    
                 path.Add(new PathNode() {
@@ -111,9 +122,7 @@ namespace AStarSquares
                 currentCostNode = allCostNodes[currentCostNode.FromIndex];
             }
             path.Reverse();
-            return new NavPath(){
-                PathNodes = path.ToArray()
-            };
+            return path;
         }
 
 
@@ -129,5 +138,26 @@ namespace AStarSquares
 
             return DIAGONAL_COST * distX + STRAIGHT_COST * (distZ - distX) + STRAIGHT_COST * distY;
         }
+
+
+        // }
+
+
+    }
+
+    public struct NavCostNode
+    {
+        public int3 FromIndex;
+        public bool Linked;
+        public int Distance;
+        public int GCost;
+        public int HCost;
+        public int FCost => GCost + HCost;
+        public int3 Index;
+    }
+
+    public struct NavCostNodeLink {
+        public int Distance;
+        public int3 LinkedIndex;
     }
 }

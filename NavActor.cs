@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using AStarSquares;
 using System.Linq;
+using Unity.Mathematics;
+using Unity.Collections;
 
 
 namespace AStarSquares
@@ -25,8 +27,8 @@ namespace AStarSquares
             
         }
 
-        public IEnumerator TravelPath(NavPath path) {
-            foreach (PathNode pathNode in path.PathNodes)
+        public IEnumerator TravelPath(NativeList<PathNode> path) {
+            foreach (PathNode pathNode in path)
             {
                 if (pathNode.Distance > 14) {
                     yield return JumpToPoint(pathNode.Location.asVector3() + Vector3.up * .4f, 1,1);
@@ -35,6 +37,7 @@ namespace AStarSquares
                 // CurrentNode = pathNode.NavLink.LinkedNavNode;
             }
             // CurrentNode.OccupyingActor = this;
+            path.Dispose();
             yield return null;
         }
 

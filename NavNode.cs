@@ -3,9 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using System;
+using Unity.Mathematics;
 
 namespace AStarSquares
 {
+
+    public enum TerrainType {
+        ShallowWater,
+        DeepWater,
+        Plains,
+        Mountain
+    }
+
     public class NavNode : MonoBehaviour, IPointerClickHandler, INavNode
     {
         public bool IsWalkable = true;
