@@ -1,23 +1,16 @@
 using System.Collections.Generic;
 using System;
+using Unity.Mathematics;
+using UnityEngine;
 
 namespace AStarSquares {
-    public class NavCostNode: IComparable
+    public struct NavCostNode: IComparable
     {
-        public NavCostNode(int gCost, int hCost, INavNode navNode, NavCostNode fromCostNode, NavNodeLink fromLink) {
-            GCost = gCost;
-            HCost = hCost;
-            NavNodeLinks = navNode.NavNodeLinks;
-            NavNode = navNode;
-            FromCostNode = fromCostNode;
-            FromLink = fromLink;
-        }
         public int CompareTo(object other) {
             if (other == null) return 1;
             return this.FCost.CompareTo(((NavCostNode)other).FCost);
         }
-        public NavCostNode FromCostNode;
-        public IEnumerable<NavNodeLink> NavNodeLinks;
+        public INavNode FromNavNode;
         public INavNode NavNode;
         public NavNodeLink FromLink;
         public int GCost;

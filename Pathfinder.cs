@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using Unity.Mathematics;
+using Unity.Collections;
+
 
 namespace AStarSquares
 {
@@ -11,32 +14,69 @@ namespace AStarSquares
 
 
         public NavPath FindPath(INavNode start, INavNode end, IEnumerable<INavNode> allNodes, int maxHorizontal, int maxVertical) {
-            List<NavCostNode> allCosts = allNodes.Select( navNode => new NavCostNode(int.MaxValue, 0, navNode, null, null)).ToList();
-            List<NavCostNode> openList = new List<NavCostNode> { new NavCostNode(0,GetDistance(start.Anchor, end.Anchor), start, null, null) };
-            List<NavCostNode> closedList = new List<NavCostNode>();
+            NativeHashMap<Vector3Int, NavCostNode> allCosts = new NativeHashMap<Vector3Int, NavCostNode>();
+            allNodes.ToList().ForEach( node => {
+                allCosts.Add(node.Anchor, new NavCostNode(){
+                    GCost = int.MaxValue,
+                    NavNode = node,
+                });
+            });
+            NativeList<Vector3Int> openList = new NativeList<Vector3Int>();
+            NavCostNode startNode = allCosts[start.Anchor];
+            startNode.GCost = 0;
+            startNode.HCost = GetDistance(start.Anchor, end.Anchor);
+            openList.Add(start.Anchor);
+            //  allNodes.Select( navNode => new NavCostNode() {
+            //     GCost = int.MaxValue,
+            //     NavNode = navNode,
+            //     Index = navNode.Anchor
+            // }).ToList();
 
-            while (openList.Count > 0) {
-                NavCostNode currentCostNode = openList.Min();
+
+            // NavCostNode startNode = allCosts.Find( navCostNode => navCostNode.NavNode == start);
+            // startNode.GCost = 0;
+            // startNode.HCost = GetDistance(start.Anchor, end.Anchor);
+            // openList.Add(startNode.Index);
+            
+            //  {
+            //     new NavCostNode() {
+            //         Position = new int3(start.Anchor.x, start.Anchor.y, start.Anchor.z),
+            //         GCost = 0,
+            //         HCost = GetDistance(start.Anchor, end.Anchor),
+            //         NavNode = start
+            //     }
+            // };
+
+            // List<NavCostNode> allCosts = allNodes.Select( navNode => new NavCostNode(int.MaxValue, 0, navNode, null, null)).ToList();
+            // List<NavCostNode> openList = new List<NavCostNode> { new NavCostNode(0,GetDistance(start.Anchor, end.Anchor), start, null, null) };
+            NativeList<Vector3> closedList = new NativeList<Vector3>();
+
+            while (openList.Count() > 0) {
+                NavCostNode currentCostNode =  lowestFCostNode(openList, allCosts);
                 if (currentCostNode.NavNode == end) {
-                    return CalculatePath(currentCostNode);
+                    return CalculatePath(currentCostNode, allCosts);
                 }
 
                 openList.Remove(currentCostNode);
                 closedList.Add(currentCostNode);
 
-                foreach (NavNodeLink navNodeLink in currentCostNode.NavNodeLinks)
+                foreach (NavNodeLink navNodeLink in currentCostNode.NavNode.NavNodeLinks)
                 {
+                    Debug.Log("checking links");
                     NavCostNode linkedCostNode = allCosts.FirstOrDefault(cost => cost.NavNode == navNodeLink.LinkedNavNode);
-                    if (linkedCostNode == null) continue;
-                    if (closedList.Contains(linkedCostNode)) continue;
+                    if (linkedCostNode.Equals(default(NavCostNode))) continue;
+                    if (closedList.Any(costNode => costNode.NavNode == linkedCostNode.NavNode)) continue;
+
+                    Debug.Log("checking links 2");
 
                     int tentativeGCost = currentCostNode.GCost + navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty;
                     if (tentativeGCost < linkedCostNode.GCost) {
-                        linkedCostNode.FromCostNode = currentCostNode;
+                        Debug.Log("checking links 3");
+                        linkedCostNode.FromNavNode = currentCostNode.NavNode;
                         linkedCostNode.FromLink = navNodeLink;
                         linkedCostNode.GCost = tentativeGCost;
                         linkedCostNode.HCost = GetDistance(linkedCostNode.NavNode.Anchor, end.Anchor);
-                        if (!openList.Contains(linkedCostNode)) {
+                        if (!openList.Any(costNode => costNode.NavNode == linkedCostNode.NavNode)) {
                             openList.Add(linkedCostNode);
                         }
                     }
@@ -45,14 +85,27 @@ namespace AStarSquares
             return new NavPath();
         }
 
-        private NavPath CalculatePath(NavCostNode endCostNode) {
+        private NavCostNode lowestFCostNode(NativeList<Vector3Int> openList, NativeHashMap<Vector3Int, NavCostNode> allCostNodes) {
+            NavCostNode lowestFCostNode = new NavCostNode(){ 
+                HCost = int.MaxValue,
+                GCost = int.MaxValue
+            };
+            openList.ToList().ForEach( index => {
+                if (allCostNodes[index].FCost < lowestFCostNode.FCost) {
+                    lowestFCostNode = allCostNodes[index];
+                }
+            });
+            return lowestFCostNode;
+        }
+        private NavPath CalculatePath(NavCostNode endCostNode, IEnumerable<NavCostNode> allCostNodes) {
             List<NavPath.PathNode> path = new List<NavPath.PathNode>();
 
             NavCostNode currentCostNode = endCostNode;
-            while(currentCostNode.FromCostNode != null) {
+            while(currentCostNode.FromNavNode != null) {    
                 path.Add(new NavPath.PathNode(currentCostNode.FromLink, currentCostNode.GCost));
-                currentCostNode = currentCostNode.FromCostNode;
+                currentCostNode = allCostNodes.ToList().Find(navCostNode => navCostNode.NavNode == currentCostNode.FromNavNode);
             }
+            Debug.Log("count" + path.Count);
             path.Reverse();
             return new NavPath(path);
         }
