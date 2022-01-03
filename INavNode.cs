@@ -14,5 +14,6 @@ namespace AStarSquares
 
         NavActor PassthroughActor { get; set;}
 
+        GameObject gameObject { get; }
     }
 }

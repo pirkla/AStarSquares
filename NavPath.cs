@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace AStarSquares
 {
-    public struct NavPath {
+    public class NavPath {
 
         public NavPath(IList<PathNode> pathNodes) {
             PathNodes = pathNodes;
@@ -12,14 +12,15 @@ namespace AStarSquares
         public int TotalCost;
         public IList<PathNode> PathNodes;
 
-        public struct PathNode {
-            public PathNode(NavNodeLink navLink, int cost) {
-                NavLink = navLink;
-                Cost = cost;
-            }
-            public NavNodeLink NavLink;
-            public int Cost;
+
+    }
+    public struct PathNode {
+        public PathNode(NavNodeLink navLink, int cost) {
+            NavLink = navLink;
+            Cost = cost;
         }
+        public NavNodeLink NavLink;
+        public int Cost;
     }
     
 }

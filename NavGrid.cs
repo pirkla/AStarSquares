@@ -94,7 +94,6 @@ namespace AStarSquares
                                 jumpCheckX = MoveTowards(jumpCheckX, 0, 1);
                                 jumpCheckY = MoveTowards(jumpCheckY, position.y + 1, 1);
                                 jumpCheckZ = MoveTowards(jumpCheckZ, 0, 1);
-                                Debug.Log(new Vector3Int(jumpCheckX + position.x,jumpCheckY,jumpCheckZ + position.z));
                                 if (AllNodes.Any( node => node.Anchor == new Vector3Int(jumpCheckX + position.x,jumpCheckY,jumpCheckZ + position.z))) {
                                     foundNode = true;
                                 }

@@ -30,27 +30,29 @@ namespace AStarSquares
                     if (linkedCostNode == null) continue;
                     if (closedList.Contains(linkedCostNode)) continue;
 
-                    int tentativeGCost = currentCostNode.GCost + navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty + (navNodeLink.IsJump ? 1:0);
+                    int localCost = navNodeLink.Distance + linkedCostNode.NavNode.MovePenalty + (navNodeLink.IsJump ? 1:0);
+                    int tentativeGCost = currentCostNode.GCost + localCost;
                     if (tentativeGCost < linkedCostNode.GCost) {
                         linkedCostNode.FromCostNode = currentCostNode;
                         linkedCostNode.FromLink = navNodeLink;
                         linkedCostNode.GCost = tentativeGCost;
                         linkedCostNode.HCost = GetDistance(linkedCostNode.NavNode.Anchor, end.Anchor);
+                        linkedCostNode.LocalCost = localCost;
                         if (!openList.Contains(linkedCostNode)) {
                             openList.Add(linkedCostNode);
                         }
                     }
                 }
             }
-            return new NavPath();
+            return new NavPath(new List<PathNode>());
         }
 
         private NavPath CalculatePath(NavCostNode endCostNode) {
-            List<NavPath.PathNode> path = new List<NavPath.PathNode>();
+            List<PathNode> path = new List<PathNode>();
 
             NavCostNode currentCostNode = endCostNode;
             while(currentCostNode.FromCostNode != null) {
-                path.Add(new NavPath.PathNode(currentCostNode.FromLink, currentCostNode.GCost));
+                path.Add(new PathNode(currentCostNode.FromLink, currentCostNode.LocalCost));
                 currentCostNode = currentCostNode.FromCostNode;
             }
             path.Reverse();

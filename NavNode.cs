@@ -3,11 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using System;
+using System.Linq;
+
 
 namespace AStarSquares
 {
     public class NavNode : MonoBehaviour, IPointerClickHandler, INavNode
     {
+        [SerializeField] GameEvent onClicked;
+
+
         public bool IsWalkable = true;
 
         public int MovePenalty => movePenalty;
@@ -22,7 +27,7 @@ namespace AStarSquares
         public NavActor PassthroughActor { get; set; }
 
 
-        private ClickTest[] targets;
+        private IEnumerable<GameObject> targets;
 
         #if UNITY_EDITOR
         private void OnDrawGizmos() {
@@ -33,15 +38,12 @@ namespace AStarSquares
 
 
         private void Start() {
-            targets = FindObjectsOfType<ClickTest>();   
+            targets = FindObjectsOfType<ClickTest>().Select( x => x.gameObject );   
         }
 
         public void OnPointerClick(PointerEventData pointerEventData)
         {
-            foreach (ClickTest target in targets)
-            {
-                ExecuteEvents.Execute<INodeTarget>(target.gameObject, null, (x,y)=>x.NodeSelected(this));
-            }
+            onClicked.Invoke(gameObject);
         }
     }
 }

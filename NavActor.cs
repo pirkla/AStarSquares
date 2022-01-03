@@ -3,15 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using AStarSquares;
 using System.Linq;
+using UnityEngine.EventSystems;
 
 
 namespace AStarSquares
 {
-    public class NavActor : MonoBehaviour
+    public class NavActor : MonoBehaviour, IPointerClickHandler
     {
+        [SerializeField] GameEvent onClicked;
+
+        [SerializeField] public int MovementPoints = 50;
         public INavNode CurrentNode;
 
+        private PathFinder pathFinder = new PathFinder();
+
         [SerializeField] private AnimationCurve jumpCurve = new AnimationCurve(new Keyframe(0, 0,0,5), new Keyframe(.5f, 1), new Keyframe(1, 0,-5,0));
+
 
         // Start is called before the first frame update
         void Start()
@@ -26,17 +33,15 @@ namespace AStarSquares
         }
 
         public IEnumerator TravelPath(NavPath path) {
-            foreach (NavPath.PathNode pathNode in path.PathNodes)
+            foreach (PathNode pathNode in path.PathNodes)
             {
                 if (pathNode.NavLink.Distance > 14) {
                     yield return JumpToPoint(pathNode.NavLink.LinkedNavNode.Anchor + Vector3.up * .4f, 1,1);
                 }
                 yield return MoveToPoint(pathNode.NavLink.LinkedNavNode.Anchor + Vector3.up * .4f,1);
                 CurrentNode = pathNode.NavLink.LinkedNavNode;
-                Debug.Log(CurrentNode.Anchor);
             }
             CurrentNode.OccupyingActor = this;
-            Debug.Log("set actor");
             yield return null;
         }
 
@@ -82,6 +87,23 @@ namespace AStarSquares
             transform.position = target;
             yield return null;
         }
+        public void OnPointerClick(PointerEventData pointerEventData)
+        {
+            onClicked.Invoke(gameObject);
+        }
+        public IList<NavPath> GetAvailablePaths(NavGrid grid) {
+            List<NavPath> paths = new List<NavPath>();
+            IList<INavNode> possibleNodes = grid.GetLinkedNodes(CurrentNode, MovementPoints/10);
+            possibleNodes.ToList().ForEach( node => {
+                NavPath newPath = pathFinder.FindPath(CurrentNode, node, possibleNodes, 1,1);
+                if (newPath.TotalCost < MovementPoints) {
+                    paths.Add(newPath);
+                }
+            });
+            return paths;
+        }
     }
+
+
 
 }

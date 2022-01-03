@@ -11,6 +11,7 @@ namespace AStarSquares {
             NavNode = navNode;
             FromCostNode = fromCostNode;
             FromLink = fromLink;
+            LocalCost = 0;
         }
         public int CompareTo(object other) {
             if (other == null) return 1;
@@ -23,5 +24,7 @@ namespace AStarSquares {
         public int GCost;
         public int HCost;
         public int FCost => GCost + HCost;
+
+        public int LocalCost;
     }
 }
