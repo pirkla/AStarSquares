@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using System;
 using System.Linq;
+using UnityEditor;
 
 
 namespace AStarSquares
@@ -26,19 +27,16 @@ namespace AStarSquares
         public NavActor OccupyingActor { get; set; }
         public NavActor PassthroughActor { get; set; }
 
-
-        private IEnumerable<GameObject> targets;
-
         #if UNITY_EDITOR
         private void OnDrawGizmos() {
             Gizmos.color = Color.blue;
             Gizmos.DrawSphere(Anchor, 0.1f);
+            Handles.Label(Anchor + Vector3.up * .2f, Anchor.ToString());
         }
         #endif
 
 
         private void Start() {
-            targets = FindObjectsOfType<ClickTest>().Select( x => x.gameObject );   
         }
 
         public void OnPointerClick(PointerEventData pointerEventData)

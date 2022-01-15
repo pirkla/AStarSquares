@@ -8,21 +8,53 @@ namespace AStarSquares
 {
     public class NavGrid : MonoBehaviour
     {
-        private const int STRAIGHT_COST = 10;
-        private const int DIAGONAL_COST = 14;
+        public List<INavNode> AllNodes { get; set; } = new List<INavNode>();
+
+
+        #if UNITY_EDITOR
+        [SerializeField] private AnimationCurve displayCurve = new AnimationCurve(new Keyframe(0, 0,0,5), new Keyframe(.5f, .5f), new Keyframe(1, 0,-5,0));
         
-        List<INavNode> AllNodes { get; set; } = new List<INavNode>();
+        private void OnDrawGizmos() {
+            foreach (INavNode node in AllNodes) 
+            {
+                foreach (NavNodeLink link in node.NavNodeLinks)
+                {
+                    Gizmos.color = Color.blue;
+                    Vector3 lastPosition = node.Anchor;
+                    float lastOffset = 0;
+                    for (float i = .1f; i <= .9f; i+= .1f)
+                    {
+                        Vector3 nextPosition = Vector3.Lerp(node.Anchor, link.LinkedNavNode.Anchor, i);
+                        float offset = displayCurve.Evaluate(i);
+                        Gizmos.DrawLine(lastPosition + Vector3.up * lastOffset, nextPosition + Vector3.up * offset);
+                        lastOffset = offset;
+                        lastPosition = nextPosition;
+                    }
+                }
+            }
+        }
+        #endif
 
         private void Start() {
-            foreach (INavNode node in GetComponentsInChildren<INavNode>())
+            AllNodes.AddRange(GetComponentsInChildren<INavNode>());
+            StartCoroutine(SetNodeLinksBatched(AllNodes,20));
+        }
+
+        IEnumerator SetNodeLinksBatched(List<INavNode> navNodes, int maxBatch) {
+            for (int i = 0; i < navNodes.Count; i+=maxBatch)
             {
-                NodeAdded(node);
+                int range = i + maxBatch > navNodes.Count ? navNodes.Count-i : maxBatch;
+                foreach (INavNode node in navNodes.GetRange(i,range))
+                {
+                    SetNodeLinks(node);
+                }
+                yield return null;
             }
         }
 
-        public void NodeAdded(INavNode node) {
+        private void SetNodeLinks(INavNode node) {
             GetJumpableNodes(node.Anchor, 2).ToList().ForEach( neighborNode => {
-                int distance = GetDistance(node.Anchor, neighborNode.Anchor);
+                int distance = NavExtensions.GetDistance(node.Anchor, neighborNode.Anchor);
                 int vertical = node.Anchor.y - neighborNode.Anchor.y;
                 if (!node.NavNodeLinks.Any( node => node.LinkedNavNode == neighborNode)) {
                     node.NavNodeLinks.Add(new NavNodeLink(neighborNode, distance, -vertical));
@@ -31,7 +63,6 @@ namespace AStarSquares
                     neighborNode.NavNodeLinks.Add(new NavNodeLink(node, distance, vertical));
                 }
             });
-            AllNodes.Add(node);
         }
 
         public void NodeRemoved(INavNode node) {
@@ -50,6 +81,8 @@ namespace AStarSquares
 
         public IList<INavNode> GetLinkedNodes(INavNode targetNode, int iterations) {
             List<INavNode> returnNodes = new List<INavNode>();
+            if (targetNode == null) { return returnNodes; }
+
             IList<NavNodeLink> currentLinks = targetNode.NavNodeLinks;
             for (int i = 0; i < iterations; i++)
             {
@@ -65,7 +98,7 @@ namespace AStarSquares
             return returnNodes;
         }
 
-        private List<INavNode> GetNodesInRadius(Vector3Int position, int radius) {
+        public List<INavNode> GetNodesInRadius(Vector3Int position, int radius) {
             List<INavNode> nodes = new List<INavNode>();
 
             for (int y = -radius; y <= radius; y++) {
@@ -83,23 +116,40 @@ namespace AStarSquares
 
             for (int z = -radius; z <= radius; z++) {
                 for (int x = -radius; x <= radius; x++) {
-                    if ((x * x) + (z * z) <= radius * radius) {
+                    if ((z != 0 || x != 0) && (x * x) + (z * z) <= radius * radius) {
                         IEnumerable<INavNode> newNodes = GetNodes(new Vector2Int(x + position.x,z + position.z));
-                        newNodes.ToList().ForEach( jumpCheckNode => {
-                            int jumpCheckX = x;
-                            int jumpCheckY = jumpCheckNode.Anchor.y + 1;
-                            int jumpCheckZ = z;
-                            bool foundNode = false;
-                            while ( jumpCheckX > 0 || jumpCheckZ > 0 ) {
-                                jumpCheckX = MoveTowards(jumpCheckX, 0, 1);
-                                jumpCheckY = MoveTowards(jumpCheckY, position.y + 1, 1);
-                                jumpCheckZ = MoveTowards(jumpCheckZ, 0, 1);
-                                if (AllNodes.Any( node => node.Anchor == new Vector3Int(jumpCheckX + position.x,jumpCheckY,jumpCheckZ + position.z))) {
-                                    foundNode = true;
-                                }
+                        newNodes.ToList().ForEach( possibleNode => {
+                            Vector3Int toPoint;
+                            Vector3Int fromPoint;
+                            int sign;
+                            if (possibleNode.Anchor.y > position.y) {
+                                toPoint = position;
+                                fromPoint = possibleNode.Anchor;
+                                sign = 1;
+                            } else {
+                                toPoint = possibleNode.Anchor;
+                                fromPoint = position;
+                                sign = -1;
                             }
-                            if (!foundNode) {
-                                nodes.Add(jumpCheckNode);
+
+                            int jumpCheckX = x * sign;
+                            int jumpCheckY = fromPoint.y + 1;
+                            int jumpCheckZ = z * sign;
+                            bool foundBlock = false;
+
+                            while ( jumpCheckX != 0 || jumpCheckZ != 0 || jumpCheckY != toPoint.y + 1) {
+                                jumpCheckX = MoveTowards(jumpCheckX, 0, 1);
+                                jumpCheckZ = MoveTowards(jumpCheckZ, 0, 1);
+
+                                Vector3Int jumpCheckPos = new Vector3Int(toPoint.x + jumpCheckX, jumpCheckY, toPoint.z + jumpCheckZ);
+                                if (AllNodes.Any(node => node.Anchor == jumpCheckPos)){
+                                    foundBlock = true;
+                                    break;
+                                }
+                                jumpCheckY = MoveTowards(jumpCheckY, toPoint.y + 1, 1);
+                            }
+                            if (!foundBlock) {
+                                nodes.Add(possibleNode);
                             }
                         });
                     }
@@ -124,18 +174,8 @@ namespace AStarSquares
             return AllNodes.Where(node => node.Anchor.x == position.x).Where(node => node.Anchor.z == position.y);
         }
 
-        private int GetDistance(Vector3Int from, Vector3Int to)
-        {
-            Vector3Int dist = from - to;
-            int distX = Mathf.Abs(dist.x);
-            int distY = Mathf.Abs(dist.y);
-            int distZ = Mathf.Abs(dist.z); 
-            if (distX > distZ)
-            {
-                return DIAGONAL_COST * distZ + STRAIGHT_COST * (distX - distZ) + STRAIGHT_COST * distY;
-            }
-
-            return DIAGONAL_COST * distX + STRAIGHT_COST * (distZ - distX) + STRAIGHT_COST * distY;
+        public IEnumerable<INavNode> GetNodes(Vector3Int position) {
+            return AllNodes.Where( it => it.Anchor == position);
         }
 
         private int MoveTowards(int current, int target, int delta) {

@@ -17,28 +17,22 @@ namespace AStarSquares
 
         private PathFinder pathFinder = new PathFinder();
 
+        private Vector3Int anchor => Vector3Int.RoundToInt(transform.TransformPoint(new Vector3(.5f, 0, .5f)));
+
         [SerializeField] private AnimationCurve jumpCurve = new AnimationCurve(new Keyframe(0, 0,0,5), new Keyframe(.5f, 1), new Keyframe(1, 0,-5,0));
 
-
-        // Start is called before the first frame update
-        void Start()
-        {
-            
+        public void GuessCurrentNode() {
+            NavGrid grid = FindObjectOfType<NavGrid>();
+            CurrentNode = grid.GetNodes(anchor).FirstOrDefault();
         }
 
-        // Update is called once per frame
-        void Update()
-        {
-            
-        }
-
-        public IEnumerator TravelPath(NavPath path) {
+        public IEnumerator TravelPath(NavPath path, float speed) {
             foreach (PathNode pathNode in path.PathNodes)
             {
                 if (pathNode.NavLink.Distance > 14) {
-                    yield return JumpToPoint(pathNode.NavLink.LinkedNavNode.Anchor + Vector3.up * .4f, 1,1);
+                    yield return JumpToPoint(pathNode.NavLink.LinkedNavNode.Anchor + Vector3.up * .4f, 1,3);
                 }
-                yield return MoveToPoint(pathNode.NavLink.LinkedNavNode.Anchor + Vector3.up * .4f,1);
+                yield return MoveToPoint(pathNode.NavLink.LinkedNavNode.Anchor + Vector3.up * .4f,speed);
                 CurrentNode = pathNode.NavLink.LinkedNavNode;
             }
             CurrentNode.OccupyingActor = this;
@@ -95,8 +89,20 @@ namespace AStarSquares
             List<NavPath> paths = new List<NavPath>();
             IList<INavNode> possibleNodes = grid.GetLinkedNodes(CurrentNode, MovementPoints/10);
             possibleNodes.ToList().ForEach( node => {
-                NavPath newPath = pathFinder.FindPath(CurrentNode, node, possibleNodes, 1,1);
+                NavPath newPath = pathFinder.FindPath(CurrentNode, node, possibleNodes, 40,1,-3);
                 if (newPath.TotalCost < MovementPoints) {
+                    paths.Add(newPath);
+                }
+            });
+            return paths;
+        }
+
+        public IList<NavPath> GetAvailableRunPaths(NavGrid grid) {
+            List<NavPath> paths = new List<NavPath>();
+            IList<INavNode> possibleNodes = grid.GetLinkedNodes(CurrentNode, MovementPoints * 2/10);
+            possibleNodes.ToList().ForEach( node => {
+                NavPath newPath = pathFinder.FindPath(CurrentNode, node, possibleNodes, 40,1,-3);
+                if (newPath.TotalCost < MovementPoints*2) {
                     paths.Add(newPath);
                 }
             });
